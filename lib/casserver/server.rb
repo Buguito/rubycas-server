@@ -432,6 +432,7 @@ module CASServer
       credentials_are_valid = false
       extra_attributes = {}
       successful_authenticator = nil
+      failed_authenticator = nil
       begin
         auth_index = 0
         settings.auth.each do |auth_class|
@@ -455,6 +456,7 @@ module CASServer
           end
 
           auth_index += 1
+          failed_authenticator = auth
         end
 
         if credentials_are_valid
@@ -491,8 +493,12 @@ module CASServer
             end
           end
         else
-          $LOG.warn("Invalid credentials given for user '#{@username}'")
-          @message = {:type => 'mistake', :message => _("Incorrect username or password.")}
+          if (!failed_authenticator.fail_reason.blank?) 
+            @message = {:type => 'mistake', :message => _("#{failed_authenticator.fail_reason}")}
+          else
+            $LOG.warn("Invalid credentials given for user '#{@username}'")
+            @message = {:type => 'mistake', :message => _("Incorrect username or password.")}
+          end
           status 401
         end
       rescue CASServer::AuthenticatorError => e

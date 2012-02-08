@@ -43,12 +43,20 @@ end
 #     digest_format: --SALT--PASSWORD--
 #     stretches: 1
 #
-class CASServer::Authenticators::SQLAuthlogic3DG < CASServer::Authenticators::SQL
+class CASServer::Authenticators::SQLAuthlogicGames < CASServer::Authenticators::SQL
+
+  attr_accessor :user_suspended
+  attr_accessor :user_active
+  attr_accessor :fail_reason
 
   def validate(credentials)
     read_standard_credentials(credentials)
     raise_if_not_configured
 
+    @user_suspended = false
+    @user_active = true
+    @fail_reason = ''
+    user_state = '';
     user_model = self.class.user_model
 
     username_column = @options[:username_column] || "login"
@@ -75,6 +83,7 @@ class CASServer::Authenticators::SQLAuthlogic3DG < CASServer::Authenticators::SQ
       user = results.first
       tokens = [@password, (not salt_column.nil?) && user.send(salt_column) || nil].compact
       crypted = user.send(password_column)
+      user_state = user.state
 
       unless @options[:extra_attributes].blank?
         if results.size > 1
@@ -82,10 +91,25 @@ class CASServer::Authenticators::SQLAuthlogic3DG < CASServer::Authenticators::SQ
         else
           extract_extra(user)
           log_extra
+	  $LOG.warn("Extra attributes are: #{user.state}")
         end
       end
 
-      return encryptor.matches?(crypted, tokens)
+      if (user_state == 'active')
+	return encryptor.matches?(crypted, tokens)
+      else
+        if (user_state == 'suspended') 
+           $LOG.warn("User '#{@username}' was banned from the system")
+           @fail_reason = "Your account has been banned."
+           @user_suspended = true
+        end
+        if (user_state == 'registered') 
+           $LOG.warn("User '#{@username}' has not activated his account.")
+           @fail_reason = "You have not activated this account yet."
+           @user_active = false
+        end
+        return false
+      end
     else
       return false
     end

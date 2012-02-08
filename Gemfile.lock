@@ -1,3 +1,10 @@
+GIT
+  remote: git://github.com/cameel/gettext.git
+  revision: f0b90f9d68a37fcba5c3f0b4eb1f7593185a7c2a
+  specs:
+    gettext (2.1.0)
+      locale (>= 2.0.5)
+
 PATH
   remote: .
   specs:
@@ -33,8 +40,6 @@ GEM
     diff-lcs (1.1.2)
     ffi (0.6.3)
       rake (>= 0.8.7)
-    gettext (2.1.0)
-      locale (>= 2.0.5)
     json_pure (1.5.1)
     locale (2.0.5)
     mime-types (1.16)
@@ -60,7 +65,7 @@ GEM
       rubyzip
     sinatra (1.1.3)
       rack (~> 1.1)
-      tilt (< 2.0, >= 1.2.2)
+      tilt (>= 1.2.2, < 2.0)
     sqlite3 (1.3.3)
     tilt (1.2.2)
     xpath (0.1.3)
@@ -70,8 +75,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  activeresource (< 3.1, >= 2.3.12)
+  activeresource (>= 2.3.12, < 3.1)
   capybara
+  gettext!
   net-ldap (~> 0.1.1)
   rack-test
   rspec

@@ -46,6 +46,19 @@ msgstr ""
 "El ticket de login que ha provisto es inválido. Puede que haya un problema "
 "con el sistema de autentificación."
 
+#: lib/casserver/cas.rb:497
+msgid ""
+"You have not activated this account yet."
+msgstr ""
+"Su cuenta aún no ha sido activada. Solicite su email de activación si lo perdió "
+"utilizando las opciones a su derecha."
+
+#: lib/casserver/cas.rb:497
+msgid ""
+"Your account has been banned."
+msgstr ""
+"Su cuenta se encuentra suspendida por los administradores."
+
 #: lib/casserver/controllers.rb:32
 msgid ""
 "You are currently logged in as '%s'. If this is not you, please log in below."

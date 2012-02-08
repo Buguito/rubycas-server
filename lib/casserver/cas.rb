@@ -240,8 +240,12 @@ module CASServer::CAS
   # This makes possible the "single sign-out" functionality added in CAS 3.1.
   # See http://www.ja-sig.org/wiki/display/CASUM/Single+Sign+Out
   def send_logout_notification_for_service_ticket(st)
+    
     uri = URI.parse(st.service)
-    uri.path = '/' if uri.path.empty?
+    uri.path = '/logout' #if uri.path.empty?
+    uri.query = ''
+    uri.fragment = ''
+    #$LOG.info "Main Service URI: #{base_service_uri}"
     time = Time.now
     rand = CASServer::Utils.random_string
 

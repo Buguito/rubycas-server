@@ -758,5 +758,15 @@ module CASServer
       raise unless @custom_views
       super engine, data, options, views
     end
+
+    def page404
+	render @template_engine, :error_404, :layout => false
+    end
+
+    not_found do
+     page404
+    end
+
+
   end
 end

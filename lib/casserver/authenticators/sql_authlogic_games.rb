@@ -96,7 +96,9 @@ class CASServer::Authenticators::SQLAuthlogicGames < CASServer::Authenticators::
       end
 
       if (user_state == 'active')
-	return encryptor.matches?(crypted, tokens)
+        user.last_login_at = Time.now
+        user.save
+	      return encryptor.matches?(crypted, tokens)
       else
         if (user_state == 'suspended') 
            $LOG.warn("User '#{@username}' was banned from the system")

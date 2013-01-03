@@ -466,9 +466,11 @@ module CASServer
           # 3.6 (ticket-granting cookie)
           tgt = generate_ticket_granting_ticket(@username, extra_attributes)
           if @remember_me
-            response.set_cookie("tgt", :value => tgt.to_s, :expires => Time.new + 365 * 60 * 60 * 25 * 10)
+            response.set_cookie('tgt', :value => tgt.to_s, :expires => Time.new + 365 * 60 * 60 * 25 * 10)
+            response.set_cookie('caslogged', :value => '1', :domain => '.3dgames.com.ar', :expires => Time.new + 365 * 60 * 60 * 25 *10)
           else
             response.set_cookie('tgt', tgt.to_s)
+            response.set_cookie('caslogged', :value => '1', :domain => '.3dgames.com.ar')
           end
 
           $LOG.debug("Ticket granting cookie '#{tgt.inspect}' granted to #{@username.inspect}")
@@ -535,6 +537,7 @@ module CASServer
       tgt = CASServer::Model::TicketGrantingTicket.find_by_ticket(request.cookies['tgt'])
 
       response.delete_cookie 'tgt'
+      response.set_cookie('caslogged', :value => '0', :expires => Time.now - 3600, :domain => '.3dgames.com.ar')
 
       if tgt
         CASServer::Model::TicketGrantingTicket.transaction do

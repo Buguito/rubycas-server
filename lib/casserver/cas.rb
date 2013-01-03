@@ -257,10 +257,11 @@ module CASServer::CAS
        </samlp:LogoutRequest>}})
 
       if response.kind_of? Net::HTTPSuccess
-        $LOG.info "Logout notification successfully posted to #{st.service.inspect}."
+        $LOG.info "Logout notification successfully posted to #{st.service.inspect}."        
         return true
       else
         $LOG.error "Service #{st.service.inspect} responed to logout notification with code '#{response.code}'!"
+        $LOG.info "Logout notification URI #{uri}."
         return false
       end
     rescue Exception => e

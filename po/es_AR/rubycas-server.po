@@ -99,7 +99,7 @@ msgstr ""
 
 #: lib/casserver/controllers.rb:168
 msgid "You have successfully logged in."
-msgstr "Has ingresado satisfactoreamente."
+msgstr "Has ingresado satisfactoriamente."
 
 #: lib/casserver/controllers.rb:184
 msgid "Incorrect username or password."

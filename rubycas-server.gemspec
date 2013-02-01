@@ -39,13 +39,14 @@ to build the LOCALE_LC files.
   s.add_dependency("sinatra", "~> 1.0")
   s.add_dependency("gettext", "~> 2.1.0")
   s.add_dependency("crypt-isaac", "~> 0.9.1")
+  s.add_dependency("koala", "~> 1.6.0")
 
   s.add_development_dependency("rack-test")
   s.add_development_dependency("capybara")
   s.add_development_dependency("rspec")
   s.add_development_dependency("rspec-core")
   s.add_development_dependency("sqlite3", "~> 1.3.1")
-  
+
   # for authenticator specs
   s.add_development_dependency("net-ldap", "~> 0.1.1")
   s.add_development_dependency("activeresource", ">= 2.3.12", "< 3.1")

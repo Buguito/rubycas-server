@@ -2,9 +2,16 @@ require 'sinatra/base'
 require 'casserver/localization'
 require 'casserver/utils'
 require 'casserver/cas'
-
+require 'net/http'
+require 'iconv'
 require 'logger'
 $LOG ||= Logger.new(STDOUT)
+
+class String
+  def to_my_utf8
+    ::Iconv.conv('UTF-8//IGNORE', 'UTF-8', self + ' ')[0..-2]
+  end
+end
 
 module CASServer
   class Server < Sinatra::Base
@@ -30,6 +37,8 @@ module CASServer
       :uri_path => ""
     )
     set :config, config
+   
+    enable :sessions
 
     def self.uri_path
       config[:uri_path]
@@ -295,6 +304,17 @@ module CASServer
       end
     end
 
+    # FB Login
+    get "#{uri_path}/fblogin" do
+
+      if (!session[:fb_userinfo]) 
+        @oauth = Koala::Facebook::OAuth.new('130331963667820','5469b64e04769405a17bbac658ab499c')
+        @fb_userinfo = @oauth.get_user_info_from_cookies(cookies)
+        session[:fb_userinfo] = @fb_userinfo
+      end
+
+    end 
+
     # The #.#.# comments (e.g. "2.1.3") refer to section numbers in the CAS protocol spec
     # under http://www.ja-sig.org/products/cas/overview/protocol/index.html
 
@@ -325,6 +345,12 @@ module CASServer
         $LOG.debug("Ticket granting cookie could not be validated: #{tgt_error}")
       elsif !tgt
         $LOG.debug("No ticket granting ticket detected.")
+      end
+
+      if tgt and !tgt_error
+        @user_bar = render_userbar(tgt.extra_attributes['user_hash'])
+      else
+        @user_bar = render_userbar(nil)
       end
 
       if params['redirection_loop_intercepted']
@@ -475,6 +501,8 @@ module CASServer
 
           $LOG.debug("Ticket granting cookie '#{tgt.inspect}' granted to #{@username.inspect}")
 
+          @user_bar = render_userbar(tgt.extra_attributes['user_hash'])
+
           if @service.blank?
             $LOG.info("Successfully authenticated user '#{@username}' at '#{tgt.client_hostname}'. No service param was given, so we will not redirect.")
             @message = {:type => 'confirmation', :message => _("You have successfully logged in.")}
@@ -495,6 +523,7 @@ module CASServer
             end
           end
         else
+          @user_bar = render_userbar(nil)
           if (!failed_authenticator.fail_reason.blank?) 
             @message = {:type => 'mistake', :message => _("#{failed_authenticator.fail_reason}")}
           else
@@ -539,7 +568,10 @@ module CASServer
       response.delete_cookie 'tgt'
       response.set_cookie('caslogged', :value => '0', :expires => Time.now - 3600, :domain => '.3dgames.com.ar')
 
+      @user_bar = render_userbar(nil)
+
       if tgt
+
         CASServer::Model::TicketGrantingTicket.transaction do
           $LOG.debug("Deleting Service/Proxy Tickets for '#{tgt}' for user '#{tgt.username}'")
           tgt.granted_service_tickets.each do |st|
@@ -741,6 +773,22 @@ module CASServer
       else
         500
       end
+    end
+
+    def render_userbar(user_hash)
+      if user_hash
+        url = URI.parse('http://profiles.3dgames.com.ar/user_bar/'+user_hash+'/basic?service_uri=http://foros.3dgames.com.ar')
+      else
+        url = URI.parse('http://profiles.3dgames.com.ar/user_bar/false/basic?service_uri=http://foros.3dgames.com.ar')
+      end
+
+      $LOG.debug("Sending request for user_bar")
+
+      req = Net::HTTP::Get.new(url.to_s)
+      res = Net::HTTP.start(url.host, url.port) {|http|
+        http.request(req)
+      }
+      res.body.to_my_utf8
     end
 
     def serialize_extra_attribute(builder, key, value)

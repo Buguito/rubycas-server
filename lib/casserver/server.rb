@@ -784,11 +784,12 @@ module CASServer
 
       $LOG.debug("Sending request for user_bar")
 
-      req = Net::HTTP::Get.new(url.to_s)
-      res = Net::HTTP.start(url.host, url.port) {|http|
-        http.request(req)
-      }
-      res.body.to_my_utf8
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      data = http.get(uri.request_uri)
+
+      data.body.to_my_utf8
+
     end
 
     def serialize_extra_attribute(builder, key, value)

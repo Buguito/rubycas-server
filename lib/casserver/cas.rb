@@ -249,12 +249,15 @@ module CASServer::CAS
     time = Time.now
     rand = CASServer::Utils.random_string
 
+    req = Net::HTTP::Post.new(uri.path)
+    req.set_form_data('logoutRequest' => %{<samlp:LogoutRequest ID="#{rand}" Version="2.0" IssueInstant="#{time.rfc2822}"><saml:NameID></saml:NameID><samlp:SessionIndex>#{st.ticket}</samlp:SessionIndex><samlp:ExtraAttributes>#{st.granted_by_tgt.extra_attributes}</samlp:ExtraAttributes></samlp:LogoutRequest>})
+
     begin
-      response = Net::HTTP.post_form(uri, {'logoutRequest' => %{<samlp:LogoutRequest ID="#{rand}" Version="2.0" IssueInstant="#{time.rfc2822}">
-        <saml:NameID></saml:NameID>
-        <samlp:SessionIndex>#{st.ticket}</samlp:SessionIndex>
-        <samlp:ExtraAttributes>#{st.granted_by_tgt.extra_attributes}</samlp:ExtraAttributes>
-       </samlp:LogoutRequest>}})
+
+      https = Net::HTTP.new(uri.host, uri.port)
+      https.use_ssl = true
+
+      response = https.start {|http| http.request(req)}
 
       if response.kind_of? Net::HTTPSuccess
         $LOG.info "Logout notification successfully posted to #{st.service.inspect}."        

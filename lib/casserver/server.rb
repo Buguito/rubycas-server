@@ -44,6 +44,36 @@ module CASServer
       config[:uri_path]
     end
 
+    def self.valid_captcha?(recaptcha_response)
+
+      request_params = {
+        secret: config[:recaptcha_private_key],
+        response: recaptcha_response
+      }
+
+      url = 'https://www.google.com/recaptcha/api/siteverify'
+      request_header = { "Content-Type" => "application/json" }
+
+      uri = URI.parse(url)
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+      request = Net::HTTP::Post.new(uri.path, request_header)
+      request.set_form_data(request_params)
+      
+      response = http.request(request)
+
+      if response
+        json = JSON.parse(response.body)
+	json["success"]
+      else
+	false
+      end
+
+    end
+
     # Strip the config.uri_path from the request.path_info...
     # FIXME: do we really need to override all of Sinatra's #static! to make this happen?
     def static!
@@ -456,6 +486,7 @@ module CASServer
       $LOG.debug("Logging in with username: #{@username}, lt: #{@lt}, service: #{@service}, auth: #{settings.auth.inspect}")
 
       credentials_are_valid = false
+      recaptcha_is_valid = Server.valid_captcha?(params['g-recaptcha-response'])
       extra_attributes = {}
       successful_authenticator = nil
       failed_authenticator = nil
@@ -485,7 +516,7 @@ module CASServer
           failed_authenticator = auth
         end
 
-        if credentials_are_valid
+        if credentials_are_valid && recaptcha_is_valid
           $LOG.info("Credentials for username '#{@username}' successfully validated using #{successful_authenticator.class.name}.")
           $LOG.debug("Authenticator provided additional user attributes: #{extra_attributes.inspect}") unless extra_attributes.blank?
 
@@ -524,11 +555,15 @@ module CASServer
           end
         else
           @user_bar = render_userbar(nil)
-          if (!failed_authenticator.fail_reason.blank?) 
-            @message = {:type => 'mistake', :message => _("#{failed_authenticator.fail_reason}")}
-          else
-            $LOG.warn("Invalid credentials given for user '#{@username}'")
-            @message = {:type => 'mistake', :message => _("Incorrect username or password.")}
+	  if recaptcha_is_valid
+            if (!failed_authenticator.fail_reason.blank?) 
+              @message = {:type => 'mistake', :message => _("#{failed_authenticator.fail_reason}")}
+            else
+              $LOG.warn("Invalid credentials given for user '#{@username}'")
+              @message = {:type => 'mistake', :message => _("Incorrect username or password.")}
+	    end
+	  else
+  	    @message = {:type => 'mistake', :message => _("Recaptcha Verification Failed..")}
           end
           status 401
         end

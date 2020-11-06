@@ -777,9 +777,9 @@ module CASServer
 
     def render_userbar(user_hash)
       if user_hash
-        url = URI.parse('http://profiles.3dgames.com.ar/user_bar/'+user_hash+'/basic?service_uri=http://foros.3dgames.com.ar')
+        uri = URI.parse('https://profiles.3dgames.com.ar/user_bar/'+user_hash+'/basic?service_uri=http://foros.3dgames.com.ar')
       else
-        url = URI.parse('http://profiles.3dgames.com.ar/user_bar/false/basic?service_uri=http://foros.3dgames.com.ar')
+        uri = URI.parse('https://profiles.3dgames.com.ar/user_bar/false/basic?service_uri=http://foros.3dgames.com.ar')
       end
 
       $LOG.debug("Sending request for user_bar")
@@ -788,8 +788,11 @@ module CASServer
       http.use_ssl = true
       data = http.get(uri.request_uri)
 
-      data.body.to_my_utf8
-
+#      req = Net::HTTP::Get.new(url.to_s)
+#      res = Net::HTTP.start(url.host, url.port) {|http|
+#        http.request(req)
+#      }
+       data.body.to_my_utf8
     end
 
     def serialize_extra_attribute(builder, key, value)
